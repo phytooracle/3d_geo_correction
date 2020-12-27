@@ -33,6 +33,7 @@ class single_pass_cloud:
 
     def __init__(self, path_to_ply, meta_path, plants_path):
         self.pcd = o3d.io.read_point_cloud(path_to_ply,format="ply")
+        self.full_res_pcd = self.pcd
         self.down_sample()
         self.get_plants(plants_path)
 
@@ -85,7 +86,7 @@ class single_pass_cloud:
         
         return image
 
-    def generate_heatmap_and_mask(self,name="merged_full"):
+    def generate_heatmap_and_mask(self,name="old"):
         
         points = np.asarray(self.pcd.points)
     
@@ -202,11 +203,13 @@ class single_pass_cloud:
         print("Translation vector: ",translation_vec)
 
         self.pcd = self.pcd.translate(translation_vec)
+        self.full_res_pcd = self.full_res_pcd.translate(translation_vec)
 
         
-    def save_new_ply_file(self,path):
+    def save_new_ply_file(self,path,full_res_path):
 
         o3d.io.write_point_cloud(path, self.pcd)
+        o3d.io.write_point_cloud(full_res_path, self.full_res_pcd)
 
         print('geo-corrected point cloud successfully saved into a new ply file. ')
 
@@ -246,7 +249,7 @@ def get_args():
                         help='Output directory',
                         metavar='outdir',
                         type=str,
-                        default='rotation_registration_out')
+                        default='geocorrect_out')
 
     parser.add_argument('-m',
                         '--meta_path',
@@ -269,6 +272,9 @@ def main():
 
     f_name = os.path.splitext(os.path.basename(args.pcd))[-2] + '_geocorrected.ply'
     out_path = os.path.join(args.outdir, f_name)
+    
+    full_res_f_name = os.path.splitext(os.path.basename(args.pcd))[-2] + '_geocorrected_full.ply'
+    full_res_out_path = os.path.join(args.outdir, full_res_f_name)
 
     if not os.path.isdir(args.outdir):
         os.makedirs(args.outdir)
@@ -282,14 +288,10 @@ def main():
 
     pc.geo_correct()
 
-    pc.save_new_ply_file(out_path)
+    pc.generate_heatmap_and_mask('new')
+
+    pc.save_new_ply_file(out_path,full_res_out_path)
  
-    # pc = single_pass_cloud(\
-    # "/storage/ariyanzarei/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_icp_merge_registered_geocorrected.ply",\
-    # "/storage/ariyanzarei/3D_Laser/scanner3DTop/2020-02-11/2020-02-11__19-37-08-449/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_metadata.json",\
-    # '/storage/ariyanzarei/2020-02-18-rgb/season10_ind_lettuce_2020-05-27.csv')
-    
-    # pc.generate_heatmap_and_mask('merged_full_ge')
 
 
 if __name__ == "__main__":
