@@ -11,6 +11,8 @@ import scipy
 import sys
 import math
 import multiprocessing
+import argparse
+import os
 
 def get_IoU(args):
 
@@ -83,7 +85,7 @@ class single_pass_cloud:
         
         return image
 
-    def generate_heatmap_and_mask(self,name):
+    def generate_heatmap_and_mask(self,name="merged_full"):
         
         points = np.asarray(self.pcd.points)
     
@@ -121,7 +123,7 @@ class single_pass_cloud:
         image = cv2.normalize(image, None, 255,0, cv2.NORM_MINMAX, cv2.CV_8UC1)
         image = image.astype('uint8')
 
-        cv2.imwrite('{0}_heatmap.png'.format(name),image)
+        # cv2.imwrite('{0}_heatmap.png'.format(name),image)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -133,11 +135,11 @@ class single_pass_cloud:
         kernel =  cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (50,50))
         image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
 
-        cv2.imwrite('{0}_mask.png'.format(name),image)
+        # cv2.imwrite('{0}_mask.png'.format(name),image)
         self.mask_heatmap = image.copy()
 
         self.mask_plants = self.generate_plant_mask(width,height,scan_min_x,scan_max_x,scan_min_y,scan_max_y)
-        cv2.imwrite('{0}_plants_mask.png'.format('full'),self.mask_plants)
+        # cv2.imwrite('{0}_plants_mask.png'.format('full'),self.mask_plants)
 
     def geo_correct(self):
 
@@ -187,11 +189,11 @@ class single_pass_cloud:
         scan_min_y = np.min(points[:,1])
         scan_max_y = np.max(points[:,1])
 
-        img_p = mask_p[max(center_y-max_k,0):w+min(0,center_y-max_k),max(center_x-max_c,0):h+min(0,center_x-max_c)]
-        img_h = mask_h[abs(min(0,center_y-max_k)):min(center_y+max_k,w),abs(min(0,center_x-max_c)):min(center_x+max_c,h)]
+        # img_p = mask_p[max(center_y-max_k,0):w+min(0,center_y-max_k),max(center_x-max_c,0):h+min(0,center_x-max_c)]
+        # img_h = mask_h[abs(min(0,center_y-max_k)):min(center_y+max_k,w),abs(min(0,center_x-max_c)):min(center_x+max_c,h)]
 
-        cv2.imwrite('res_p.png',img_p)
-        cv2.imwrite('res_h.png',img_h)
+        # cv2.imwrite('res_p.png',img_p)
+        # cv2.imwrite('res_h.png',img_h)
 
         
         ratio = ((scan_max_x-scan_min_x)/(h),(scan_max_y-scan_min_y)/(w))
@@ -229,24 +231,67 @@ class single_pass_cloud:
         return utm.to_latlon(utm_x, utm_y, utm_zone, utm_num)
 
 
-if __name__ == "__main__":
+def get_args():
     
+    parser = argparse.ArgumentParser(
+        description='Geo-correction of point cloud data',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('pcd',
+                        metavar='pcd',
+                        help='Merged and registered point cloud')
+
+    parser.add_argument('-o',
+                        '--outdir',
+                        help='Output directory',
+                        metavar='outdir',
+                        type=str,
+                        default='rotation_registration_out')
+
+    parser.add_argument('-m',
+                        '--meta_path',
+                        help='Metadata path',
+                        metavar='meta_path',
+                        required=True)
+
+    parser.add_argument('-l',
+                        '--plant_loc',
+                        help='CSV file containing known locations of plants',
+                        metavar='plant_loc',
+                        required=True)
+
+    return parser.parse_args()
+
+
+def main():
+    
+    args = get_args()
+
+    f_name = os.path.splitext(os.path.basename(args.pcd))[-2] + '_geocorrected.ply'
+    out_path = os.path.join(args.outdir, f_name)
+
+    if not os.path.isdir(args.outdir):
+        os.makedirs(args.outdir)
+
+    pc = single_pass_cloud(\
+    args.pcd,\
+    args.meta_path,\
+    args.plant_loc)
+    
+    pc.generate_heatmap_and_mask()
+
+    pc.geo_correct()
+
+    pc.save_new_ply_file(out_path)
+ 
     # pc = single_pass_cloud(\
-    # "/storage/ariyanzarei/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_icp_merge_registered.ply",\
+    # "/storage/ariyanzarei/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_icp_merge_registered_geocorrected.ply",\
     # "/storage/ariyanzarei/3D_Laser/scanner3DTop/2020-02-11/2020-02-11__19-37-08-449/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_metadata.json",\
     # '/storage/ariyanzarei/2020-02-18-rgb/season10_ind_lettuce_2020-05-27.csv')
     
-    # pc.generate_heatmap_and_mask('merged_full')
+    # pc.generate_heatmap_and_mask('merged_full_ge')
 
-    # pc.geo_correct()
 
-    # pc.save_new_ply_file('/storage/ariyanzarei/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_icp_merge_registered_geocorrected.ply')
-
-    
-    pc = single_pass_cloud(\
-    "/storage/ariyanzarei/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_icp_merge_registered_geocorrected.ply",\
-    "/storage/ariyanzarei/3D_Laser/scanner3DTop/2020-02-11/2020-02-11__19-37-08-449/dc2fa27a-dfa8-4334-bb8f-3836c6187a13_metadata.json",\
-    '/storage/ariyanzarei/2020-02-18-rgb/season10_ind_lettuce_2020-05-27.csv')
-    
-    pc.generate_heatmap_and_mask('merged_full_ge')
+if __name__ == "__main__":
+    main()
 
