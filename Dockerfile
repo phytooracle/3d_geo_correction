@@ -5,7 +5,8 @@ COPY . /opt
 
 USER root
 
-RUN apt-get update 
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false update -y
 RUN apt-get install -y python3.6-dev \
                        python3-pip \
                        wget \
@@ -29,7 +30,7 @@ RUN pip3 install pandas==1.0.3
 RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.7.1.tar.gz
 RUN tar -xvf spatialindex-src-1.7.1.tar.gz
 RUN cd spatialindex-src-1.7.1/ && ./configure && make && make install
-RUN ldconfig                       
+RUN ldconfig
 RUN add-apt-repository ppa:ubuntugis/ppa
 RUN export CPLUS_INCLUDE_PATH=/usr/include/gdal
 RUN export C_INCLUDE_PATH=/usr/include/gdal
@@ -61,3 +62,5 @@ RUN apt-get install -y libgl1-mesa-dev
 
 RUN pip3 install open3d
 RUN pip3 install utm
+
+ENTRYPOINT [ "python3", "/opt/geo_correct_point_cloud.py" ]
