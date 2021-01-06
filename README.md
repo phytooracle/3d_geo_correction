@@ -9,6 +9,7 @@ This is a repository that includes all the codes to geo_correct 3d point clouds 
 
 ## Outputs
 
+* The down sampled point cloud before geo-correction
 * The full resolution geo-corrected point cloud 
 * The down sampled geo-corrected point cloud
 
