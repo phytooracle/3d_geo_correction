@@ -35,6 +35,10 @@ class single_pass_cloud:
         self.pcd = o3d.io.read_point_cloud(path_to_ply,format="ply")
         self.full_res_pcd = self.pcd
         self.down_sample()
+
+        # save down_sampled for visualization. Comment this later
+        o3d.io.write_point_cloud(path_to_ply.replace('merge_registered','merge_registered_down_sampled'), self.pcd)
+
         self.get_plants(plants_path)
 
     def down_sample(self):
@@ -128,7 +132,12 @@ class single_pass_cloud:
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        _, image = cv2.threshold(image,20,255,cv2.THRESH_BINARY)
+        _, image = cv2.threshold(image,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+        # cv2.imwrite('{0}_otsu.png'.format(name),image)
+
+        kernel =  cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20))
+        image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
 
         kernel =  cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (40,40))
         image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
@@ -156,8 +165,8 @@ class single_pass_cloud:
         arglist = []
         results = []
 
-        for k in range(0,w,20):
-            for c in range(0,h,100):
+        for k in range(int(w/2-200),int(w/2+200),10):
+            for c in range(int(h/2-2500),int(h/2+2500),100):
                 img_p = mask_p[max(center_y-k,0):w+min(0,center_y-k),max(center_x-c,0):h+min(0,center_x-c)]
                 img_h = mask_h[abs(min(0,center_y-k)):min(center_y+k,w),abs(min(0,center_x-c)):min(center_x+c,h)]
 
@@ -190,8 +199,8 @@ class single_pass_cloud:
         scan_min_y = np.min(points[:,1])
         scan_max_y = np.max(points[:,1])
 
-        # img_p = mask_p[max(center_y-max_k,0):w+min(0,center_y-max_k),max(center_x-max_c,0):h+min(0,center_x-max_c)]
-        # img_h = mask_h[abs(min(0,center_y-max_k)):min(center_y+max_k,w),abs(min(0,center_x-max_c)):min(center_x+max_c,h)]
+        img_p = mask_p[max(center_y-max_k,0):w+min(0,center_y-max_k),max(center_x-max_c,0):h+min(0,center_x-max_c)]
+        img_h = mask_h[abs(min(0,center_y-max_k)):min(center_y+max_k,w),abs(min(0,center_x-max_c)):min(center_x+max_c,h)]
 
         # cv2.imwrite('res_p.png',img_p)
         # cv2.imwrite('res_h.png',img_h)
