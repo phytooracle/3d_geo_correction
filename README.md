@@ -22,6 +22,7 @@ This is a repository that includes all the codes to geo_correct 3d point clouds 
     * path to the csv file containing known locations of the plants: plant_loc (-l --plant_loc)
 * Optional Arguments:
     * output directory: outdir (-o --outdir)
+    * is detected csv file: use_detected_plants (-d --use_detected_plants) which determines whether or not the csv file contains the coordinates of the detected plants using Faster-RCNN model. 
 
 
 ## Running the Script
