@@ -14,29 +14,68 @@ import multiprocessing
 import argparse
 import os
 
+def get_scan_dir(meta_path):
+
+    with open(meta_path) as f:
+        meta = json.load(f)['lemnatec_measurement_metadata']
+
+    scan_dir = int(meta['sensor_variable_metadata']['current setting Scan direction (automatically set at runtime)'])
+
+    return scan_dir
+
+def get_priors(x,y,direction):
+
+    # x is the easting and y is the northing dir
+
+    if direction == 0:
+        mu_x = 13297
+        sig_x = 2
+        mu_y = 320
+        sig_y = 15
+    else:
+        mu_x = 10696
+        sig_x = 2
+        mu_y = 380
+        sig_y = 5
+
+    x_res = np.exp(-np.power(x - mu_x, 2.) / (2 * np.power(sig_x, 2.)))
+    y_res = np.exp(-np.power(y - mu_y, 2.) / (2 * np.power(sig_y, 2.)))
+
+    return x_res,y_res
+
 def get_IoU(args):
 
     img_p = args[0]
     img_h = args[1]
     x = args[2]
     y = args[3]
+    direction = args[4]
 
     img_p = cv2.resize(img_p,(int(0.1*img_p.shape[1]),int(0.1*img_p.shape[0])))
     img_h = cv2.resize(img_h,(img_p.shape[1],img_p.shape[0]))
 
     intersection = np.sum(cv2.bitwise_and(img_p,img_h))
     union = np.sum(cv2.bitwise_or(img_p,img_h))
+    iou = intersection/union
 
-    return intersection/union,x,y
+    prior_x, prior_y = get_priors(x,y,direction)
+    score = iou*prior_x*prior_y
+
+    return score,x,y
 
 
 
 class single_pass_cloud:
 
     def __init__(self, path_to_ply, meta_path, plants_path,use_detected_plants):
+        
+        self.direction = get_scan_dir(meta_path)
+        print('Scan direction is: ',self.direction)
+
         self.pcd = o3d.io.read_point_cloud(path_to_ply,format="ply")
         self.full_res_pcd = self.pcd
         self.down_sample()
+        
 
         # save down_sampled for visualization. Comment this later
         o3d.io.write_point_cloud(path_to_ply.replace('merge_registered','merge_registered_down_sampled'), self.pcd)
@@ -96,7 +135,9 @@ class single_pass_cloud:
         for p in plants:
             x = int(width*(p[1]-scan_min_y)/(scan_max_y-scan_min_y))
             y = int(height*(p[0]-scan_min_x)/(scan_max_x-scan_min_x))
+
             cv2.circle(image,(y+st_y,x+st_x),100,(0,255,0),-1)
+            
 
         image = image.astype('uint8')
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -198,7 +239,7 @@ class single_pass_cloud:
                 img_h = mask_h[abs(min(0,center_y-k)):min(center_y+k,w),abs(min(0,center_x-c)):min(center_x+c,h)]
 
                 # arglist.append((img_p.copy(),img_h.copy(),c,k))
-                results.append(get_IoU((img_p,img_h,c,k)))
+                results.append(get_IoU((img_p,img_h,c,k,self.direction)))
                 
 
         # print('Beggining the geocorrection...')
@@ -334,7 +375,7 @@ def main():
 
     pc.geo_correct()
 
-    pc.generate_heatmap_and_mask('new')
+    # pc.generate_heatmap_and_mask('new')
 
     pc.save_new_ply_file(out_path,full_res_out_path)
  
