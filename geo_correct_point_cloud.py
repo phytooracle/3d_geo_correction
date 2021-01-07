@@ -55,17 +55,19 @@ class single_pass_cloud:
 
         plants = []
         
-        with open(plants_path, mode='r') as infile:
-            reader = csv.reader(infile)
-            
-            if not use_detected_plants:
+        if not use_detected_plants:
+            with open(plants_path, mode='r') as infile:
+                reader = csv.reader(infile)
                 for rows in reader:
                     if rows[0] != "Latitude" and rows[0] != "EMPTY":
                         
                         p = [float(rows[0]),float(rows[1])]
                         p = utm.from_latlon(p[0],p[1])
                         plants.append([p[0],p[1]])
-            else:
+            
+        else:
+            with open(plants_path, mode='r',encoding='utf-8') as infile:
+                reader = csv.reader(infile)
                 for rows in reader:
                     if rows[0] != "date" and rows[0] != "EMPTY":
                         
