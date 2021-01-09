@@ -14,6 +14,11 @@ import multiprocessing
 import argparse
 import os
 
+x_prior_zero_dir = -1
+y_prior_zero_dir = -1
+x_prior_one_dir = -1
+y_prior_one_dir = -1
+
 def get_scan_dir(meta_path):
 
     with open(meta_path) as f:
@@ -27,16 +32,27 @@ def get_priors(x,y,direction):
 
     # x is the easting and y is the northing dir
 
+    # if direction == 0:
+    #     mu_x = 13297
+    #     sig_x = 2
+    #     mu_y = 320
+    #     sig_y = 15
+    # else:
+    #     mu_x = 10696
+    #     sig_x = 2
+    #     mu_y = 380
+    #     sig_y = 5
+
     if direction == 0:
-        mu_x = 13297
-        sig_x = 2
-        mu_y = 320
-        sig_y = 15
+        mu_x = x_prior_zero_dir
+        sig_x = 10
+        mu_y = y_prior_zero_dir
+        sig_y = 20
     else:
-        mu_x = 10696
-        sig_x = 2
-        mu_y = 380
-        sig_y = 5
+        mu_x = x_prior_one_dir
+        sig_x = 10
+        mu_y = y_prior_one_dir
+        sig_y = 20
 
     x_res = np.exp(-np.power(x - mu_x, 2.) / (2 * np.power(sig_x, 2.)))
     y_res = np.exp(-np.power(y - mu_y, 2.) / (2 * np.power(sig_y, 2.)))
@@ -50,6 +66,7 @@ def get_IoU(args):
     x = args[2]
     y = args[3]
     direction = args[4]
+    
 
     img_p = cv2.resize(img_p,(int(0.1*img_p.shape[1]),int(0.1*img_p.shape[0])))
     img_h = cv2.resize(img_h,(img_p.shape[1],img_p.shape[0]))
@@ -57,9 +74,10 @@ def get_IoU(args):
     intersection = np.sum(cv2.bitwise_and(img_p,img_h))
     union = np.sum(cv2.bitwise_or(img_p,img_h))
     iou = intersection/union
-
+    
     prior_x, prior_y = get_priors(x,y,direction)
     score = iou*prior_x*prior_y
+    # score = iou
 
     return score,x,y
 
@@ -215,7 +233,7 @@ class single_pass_cloud:
         self.mask_heatmap = image.copy()
 
         self.mask_plants = self.generate_plant_mask(width,height,scan_min_x,scan_max_x,scan_min_y,scan_max_y)
-        # cv2.imwrite('{0}_plants_mask.png'.format('full'),self.mask_plants)
+        cv2.imwrite('{0}_plants_mask.png'.format('full'),self.mask_plants)
 
     def geo_correct(self):
 
@@ -347,12 +365,42 @@ def get_args():
                         type=str,
                         default='Y')
 
+    parser.add_argument('-x',
+                        '--x_prior_zero_dir',
+                        help='Pixel value for the prior in the x direction when the scan direction is 0.',
+                        metavar='x_prior_zero_dir',
+                        default=13398)
+
+    parser.add_argument('-y',
+                        '--y_prior_zero_dir',
+                        help='Pixel value for the prior in the y direction when the scan direction is 0.',
+                        metavar='y_prior_zero_dir',
+                        default=459)
+
+    parser.add_argument('-k',
+                        '--x_prior_one_dir',
+                        help='Pixel value for the prior in the x direction when the scan direction is 1.',
+                        metavar='x_prior_one_dir',
+                        default=10491)
+
+    parser.add_argument('-n',
+                        '--y_prior_one_dir',
+                        help='Pixel value for the prior in the y direction when the scan direction is 1.',
+                        metavar='y_prior_one_dir',
+                        default=529)
+
     return parser.parse_args()
 
 
 def main():
-    
+    global x_prior_zero_dir,y_prior_zero_dir,x_prior_one_dir,y_prior_one_dir
+
     args = get_args()
+
+    x_prior_zero_dir = args.x_prior_zero_dir
+    y_prior_zero_dir = args.y_prior_zero_dir
+    x_prior_one_dir = args.x_prior_one_dir
+    y_prior_one_dir = args.y_prior_one_dir
 
     f_name = os.path.splitext(os.path.basename(args.pcd))[-2] + '_geocorrected.ply'
     out_path = os.path.join(args.outdir, f_name)
