@@ -27,7 +27,6 @@ RUN apt-get install -y libgdal-dev
 RUN pip3 install cython
 RUN pip3 install --upgrade cython
 RUN pip3 --no-cache-dir install torchvision==0.7.0 torch==1.6.0
-RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 
 RUN wget http://download.osgeo.org/libspatialindex/spatialindex-src-1.7.1.tar.gz
