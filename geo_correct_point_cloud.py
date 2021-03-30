@@ -327,8 +327,8 @@ def plant_based_transform_no_alignment(args):
     output_path = pcd_path.replace(args.path,args.output).replace('_icp_merge_registered.ply','_corrected.ply')
     o3d.io.write_point_cloud(output_path, pcd)
 
-    pcd_down = copy.deepcopy(pcd).voxel_down_sample(1e-2)
-    o3d.io.write_point_cloud(output_path.replace('_corrected.ply','_down_sampled.ply'), pcd_down)
+    # pcd_down = copy.deepcopy(pcd).voxel_down_sample(1e-2)
+    # o3d.io.write_point_cloud(output_path.replace('_corrected.ply','_down_sampled.ply'), pcd_down)
 
 
 def get_args():
