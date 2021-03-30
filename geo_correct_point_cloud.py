@@ -321,7 +321,7 @@ def plant_based_transform_no_alignment(args):
     for plt in plants:
         if plt[0]>mins[0] and plt[0]<maxs[0] and plt[1]>mins[1] and plt[1]<maxs[1]:
             
-            [k, idx, _] = tree.search_knn_vector_3d([plt[0],plt[1],maxs[2]], 1000)
+            [k, idx, _] = tree.search_radius_vector_3d([plt[0],plt[1],maxs[2]], 0.1)
             np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
 
     output_path = pcd_path.replace(args.path,args.output).replace('_icp_merge_registered.ply','_corrected.ply')
