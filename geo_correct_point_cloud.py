@@ -322,8 +322,7 @@ def get_args():
                         '--core',
                         help='Number of cores to use',
                         metavar='core',
-                        required=False,
-                        default=1)
+                        required=False)
 
     parser.add_argument('-d',
                         '--plants',
