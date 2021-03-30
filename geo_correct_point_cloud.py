@@ -249,7 +249,7 @@ def plant_based_transform_no_alignment(args):
     pcd_path = pcd_path[0]
 
     plants = read_plant_detection_csv(args.plants,args.scandate)
-
+    print(plants)
     pcd = o3d.io.read_point_cloud(pcd_path,format="ply")
 
     mins = np.min(np.array(pcd.points),axis=0)
