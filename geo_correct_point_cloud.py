@@ -316,13 +316,13 @@ def plant_based_transform_no_alignment(args):
 
     pcd = pcd.transform(T)
 
-    # tree = o3d.geometry.KDTreeFlann(pcd)
+    tree = o3d.geometry.KDTreeFlann(pcd)
 
-    # for plt in plants:
-    #     if plt[0]>mins[0] and plt[0]<maxs[0] and plt[1]>mins[1] and plt[1]<maxs[1]:
+    for plt in plants:
+        if plt[0]>mins[0] and plt[0]<maxs[0] and plt[1]>mins[1] and plt[1]<maxs[1]:
             
-    #         [k, idx, _] = tree.search_knn_vector_3d([plt[0],plt[1],maxs[2]], 400)
-    #         np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
+            [k, idx, _] = tree.search_knn_vector_3d([plt[0],plt[1],maxs[2]], 1000)
+            np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
 
     output_path = pcd_path.replace(args.path,args.output).replace('_icp_merge_registered.ply','_corrected.ply')
     o3d.io.write_point_cloud(output_path, pcd)
