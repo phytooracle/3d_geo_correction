@@ -135,6 +135,7 @@ def read_plant_detection_csv(path,scan_date):
             min_date = d
     
     plants = np.array(dict_plants[min_date])
+    
     return plants
 
 
