@@ -105,9 +105,12 @@ def get_plant_locations_no_alignment(pcd,mins,maxs,pass_path,model_path):
 def read_plant_detection_csv(path,scan_date):
     plants = []
     
+    print(scan_date)
+    
     with open(path, mode='r',encoding='utf-8') as infile:
         reader = csv.reader(infile)
         for rows in reader:
+            print(rows[0])
             if rows[0] != "date" and rows[0] != "EMPTY" and rows[0] == scan_date:
                 
                 p = [float(rows[5]),float(rows[4])]
