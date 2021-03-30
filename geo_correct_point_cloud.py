@@ -129,7 +129,7 @@ def read_plant_detection_csv(path,scan_date):
     for d in dict_plants:
         d2 = datetime.strptime(d,"%Y-%m-%d")
 
-        diff = (d2-d1).days
+        diff = abs((d2-d1).days)
 
         if diff<min_diff:
             min_diff = diff
