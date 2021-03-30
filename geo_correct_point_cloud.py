@@ -103,21 +103,38 @@ def get_plant_locations_no_alignment(pcd,mins,maxs,pass_path,model_path):
     return locations
 
 def read_plant_detection_csv(path,scan_date):
-    plants = []
     
-    print(scan_date)
-    
+    dict_plants = {}
+
     with open(path, mode='r',encoding='utf-8') as infile:
         reader = csv.reader(infile)
         for rows in reader:
-            print(rows[0])
-            if rows[0] != "date" and rows[0] != "EMPTY" and rows[0] == scan_date:
-                
+            
+            if rows[0] != "date" and rows[0] != "EMPTY":
+
                 p = [float(rows[5]),float(rows[4])]
                 p = utm.from_latlon(p[0],p[1])
-                plants.append([p[0],p[1]])
-                
-    plants = np.array(plants)
+
+                if rows[0] in dict_plants:
+                    dict_plants[rows[0]].append([p[0],p[1]])
+                else:
+                    dict_plants[rows[0]] = [p[0],p[1]]
+
+    d1 = datetime.strptime(scan_date,"%Y-%m-%d")
+
+    min_diff = sys.maxsize
+    min_date = None
+
+    for d in dict_plants:
+        d2 = datetime.strptime(d,"%Y-%m-%d")
+
+        diff = (d2-d1).days
+
+        if diff<min_diff:
+            min_diff = diff
+            min_date = d
+    
+    plants = np.array(dict_plants[min_date])
     return plants
 
 
