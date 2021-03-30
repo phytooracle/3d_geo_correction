@@ -119,7 +119,7 @@ def read_plant_detection_csv(path,scan_date):
                 if rows[0] in dict_plants:
                     dict_plants[rows[0]].append([p[0],p[1]])
                 else:
-                    dict_plants[rows[0]] = [p[0],p[1]]
+                    dict_plants[rows[0]] = [[p[0],p[1]]]
 
     d1 = datetime.strptime(scan_date,"%Y-%m-%d")
 
@@ -134,7 +134,7 @@ def read_plant_detection_csv(path,scan_date):
         if diff<min_diff:
             min_diff = diff
             min_date = d
-    
+
     plants = np.array(dict_plants[min_date])
 
     return plants
