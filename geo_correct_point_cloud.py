@@ -32,24 +32,27 @@ def get_plant_location_in_image(images,model_path):
     return top_predictions	
 
 # --------------------------------------------------
-def get_plant_locations_no_alignment(pcd,mins,maxs,pass_path,model_path):
+#def get_plant_locations_no_alignment(pcd,mins,maxs,pass_path,model_path,json_path,image_path):
+def get_plant_locations_no_alignment(pcd,mins,maxs,model_path,json_path,image_path):
 
     locations=[]
         
-    meta_path = glob.glob(pass_path+'/*metadata.json')
+    #meta_path = glob.glob(pass_path+'/*metadata.json')
+    meta_path = json_path
     if len(meta_path) == 0:
         print(":: Error: Metadata file missing or cannot open.")
         return locations
-    meta_path = meta_path[0]
+    #meta_path = meta_path[0]
 
     width_pcd = maxs[0]-mins[0]
     height_pcd = maxs[1]-mins[1]
 
-    merged_image_path = glob.glob(pass_path+'/*merged_east_west.png')
+    #merged_image_path = glob.glob(pass_path+'/*merged_east_west.png')
+    merged_image_path = image_path
     if len(merged_image_path) == 0:
         print(":: Error: Merged image file missing or cannot open.")
         return locations
-    merged_image_path = merged_image_path[0]
+    #merged_image_path = merged_image_path[0]
 
     merged_image = cv2.imread(merged_image_path)
     
@@ -268,13 +271,15 @@ def get_best_similarity_for_plant_transformation(d,rotation_point,locations,insi
 
 def plant_based_transform_no_alignment(args):
 
-    scan_timestamp = args.path.split('/')[-1]    
+    #scan_timestamp = args.path.split('/')[-1]    
 
-    pcd_path = glob.glob(args.path+"/*icp_merge_registered.ply")
-    
+    #pcd_path = glob.glob(args.path+"/*icp_merge_registered.ply")
+    pcd_path = args.point_cloud
+    print(pcd_path)
     if pcd_path is None or len(pcd_path) == 0:
-        print(":: Could not find icp_merge_registered.ply for {0}".format(scan_timestamp))
-    pcd_path = pcd_path[0]
+        #print(":: Could not find icp_merge_registered.ply for {0}".format(scan_timestamp))
+        print(":: Could not find icp_merge_registered.ply")
+    #pcd_path = pcd_path[0]
 
     plants = read_plant_detection_csv(args.plants,args.scandate)
     
@@ -291,7 +296,9 @@ def plant_based_transform_no_alignment(args):
 
     np.asarray(pcd.colors)[:, :] = colors
 
-    locations = get_plant_locations_no_alignment(pcd,mins,maxs,args.path,args.model)
+    #locations = get_plant_locations_no_alignment(pcd,mins,maxs,args.path,args.model,args.metadata_json,args.merged_image)
+    locations = get_plant_locations_no_alignment(pcd,mins,maxs,args.model,args.metadata_json,args.merged_image)
+
 
     if len(locations) == 0:
         print(":: Error occured while detecting the plants locations in the PNG file.")
@@ -324,7 +331,11 @@ def plant_based_transform_no_alignment(args):
             [k, idx, _] = tree.search_knn_vector_3d([plt[0],plt[1],maxs[2]], 10000)
             np.asarray(pcd.colors)[idx[1:], :] = [1, 0, 1]
 
-    output_path = pcd_path.replace(args.path,args.output).replace('_icp_merge_registered.ply','_corrected.ply')
+    #output_path = pcd_path.replace(args.path,args.output).replace('_icp_merge_registered.ply','_corrected.ply')
+    if not os.path.isdir(args.output):
+        os.makedirs(args.output)
+
+    output_path = os.path.join(args.output, pcd_path.replace('_icp_merge_registered.ply','_corrected.ply'))
     o3d.io.write_point_cloud(output_path, pcd)
 
     # pcd_down = copy.deepcopy(pcd).voxel_down_sample(1e-2)
@@ -337,11 +348,11 @@ def get_args():
         description='Geo-correction of point cloud data using plant locations.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('-p',
-                        '--path',
-                        help='The path to the registered and rotated point cloud file.',
-                        metavar='path',
-                        required=True)
+    # parser.add_argument('-p',
+    #                     '--path',
+    #                     help='The path to the registered and rotated point cloud file.',
+    #                     metavar='path',
+    #                     required=True)
 
     parser.add_argument('-m',
                         '--model',
@@ -369,8 +380,30 @@ def get_args():
 
     parser.add_argument('-o',
                         '--output',
-                        help='The output directory.',
+                        help='Output directory.',
                         metavar='output',
+                        default='3d_geo_correction_out/')
+
+    parser.add_argument('-j',
+                        '--metadata_json',
+                        help='Path to the metadata JSON file.',
+                        metavar='model',
+                        type=str,
+                        required=True)
+
+    
+    parser.add_argument('-i',
+                        '--merged_image',
+                        help='Path to the merged PNG image.',
+                        metavar='model',
+                        type=str,
+                        required=True)
+
+    parser.add_argument('-p',
+                        '--point_cloud',
+                        help='Path to the registered and rotated point cloud file.',
+                        metavar='path',
+                        type=str,
                         required=True)
 
     return parser.parse_args()
