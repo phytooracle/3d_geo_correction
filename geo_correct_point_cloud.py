@@ -275,7 +275,7 @@ def plant_based_transform_no_alignment(args):
 
     #pcd_path = glob.glob(args.path+"/*icp_merge_registered.ply")
     pcd_path = args.point_cloud
-    print(pcd_path)
+    
     if pcd_path is None or len(pcd_path) == 0:
         #print(":: Could not find icp_merge_registered.ply for {0}".format(scan_timestamp))
         print(":: Could not find icp_merge_registered.ply")
@@ -335,7 +335,8 @@ def plant_based_transform_no_alignment(args):
     if not os.path.isdir(args.output):
         os.makedirs(args.output)
 
-    output_path = os.path.join(args.output, pcd_path.replace('_icp_merge_registered.ply','_corrected.ply'))
+    #output_path = os.path.join(args.output, pcd_path.replace('_icp_merge_registered.ply','_corrected.ply'))
+    output_path = os.path.join(args.output, os.path.basename(pcd_path).replace('_icp_merge_registered.ply','_corrected.ply'))
     o3d.io.write_point_cloud(output_path, pcd)
 
     # pcd_down = copy.deepcopy(pcd).voxel_down_sample(1e-2)
