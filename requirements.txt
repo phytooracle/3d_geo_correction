@@ -1,6 +1,6 @@
 setuptools
 GDAL==3.0.4
-numpy==1.19.1
+numpy==1.22.0
 matplotlib==3.2.1
 pandas==1.0.3
 ExifRead==2.3.1
